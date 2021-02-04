@@ -25,9 +25,9 @@ c.execute('''CREATE TABLE IF NOT EXISTS posts (
 
 conn.commit()
 
-# c.execute('INSERT INTO users VALUES("user1","1234");')
-# c.execute('INSERT INTO users VALUES("user2","1234");')
-# c.execute('INSERT INTO users VALUES("user3","1234");')
-# conn.commit()
+c.execute('INSERT INTO users VALUES("Jan","1234");')
+c.execute('INSERT INTO users VALUES("Andrzej","1234");')
+c.execute('INSERT INTO users VALUES("Pawel","1234");')
+conn.commit()
 
 conn.close()
