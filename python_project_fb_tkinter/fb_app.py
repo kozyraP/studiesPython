@@ -8,12 +8,6 @@ class App:
         'admin': '1234'
     }
 
-    # to do replace with db users
-    user = {
-        'user1': '1234',
-        'user2': '1234'
-    }
-
     def __init__(self):
         self.root = tk.Tk()
         self.frame = tk.Frame(self.root)
@@ -38,13 +32,19 @@ class App:
                   command=perform_login).grid(row=4, column=1)
 
     def perform_login(self, username, password):
+
+        query = f'SELECT * FROM users WHERE name="{username}" and password = "{password}";'
+        temp_user = self.perform_db_query_and_return_data(query)
+
         if username in self.admin.keys() and self.admin[username] == password:
             print("logged in as admin")
             self.create_admin_view()
 
-        elif username in self.user.keys() and self.user[username] == password:
+        elif len(temp_user) > 0:
             print("logged in as user")
-            self.create_user_view()
+            self.create_user_view(username)
+        else:
+            messagebox.showinfo("New info", f"Wrong username or password")
 
     def create_admin_view(self):
         self.clear_screen()
@@ -52,7 +52,7 @@ class App:
         tk.Button(self.frame, text='Update user', command=self.admin_update_user_view).grid(row=1, column=0)
         tk.Button(self.frame, text='Delete user', command=self.admin_delete_user_view).grid(row=2, column=0)
         tk.Button(self.frame, text='Show all users', command=self.admin_show_all_users).grid(row=3, column=0)
-        tk.Button(self.frame, text='See user posts').grid(row=4, column=0)
+        tk.Button(self.frame, text='See user posts', command=self.admin_show_user_posts).grid(row=4, column=0)
         tk.Button(self.frame, text='Logout', command=self.create_login_view).grid(row=5, column=0)
 
     def admin_add_user_view(self):
@@ -145,39 +145,84 @@ class App:
             tk.Label(self.frame, text=str(user[2])).grid(row=row_num, column=2)
             row_num += 1
 
-        tk.Button(self.frame, text='Back to admin menu', command=self.create_admin_view).grid(row=row_num+1)
+        tk.Button(self.frame, text='Back to admin menu', command=self.create_admin_view).grid(row=row_num + 1)
 
-    # to do
     def admin_show_user_posts(self):
 
-        # to do
-        # to do
-        # to do
-        # to do
-        # to do
-        # to do
-        # to do
         self.clear_screen()
 
         def show_user_posts():
-            query = f'SELECT * FROM users WHERE rowid = {id_field.get()}'
+            username = username_field.get()
+            query = f'SELECT * FROM posts WHERE user LIKE  "{username}"'
             print(query)
-            self.perform_db_query(query)
-            messagebox.showinfo("New user info", f"User with id: {id_field.get()} was deleted correctly")
-            self.create_admin_view()
+            all_posts = self.perform_db_query_and_return_data(query)
 
-        id_field = tk.Entry(self.frame)
-        id_field.grid(row=0, column=0)
+            if len(all_posts) == 0:
+                print("User don't have posts yet")
+                messagebox.showinfo("New user info", f"User with username: {username} has no posts")
+                self.create_admin_view()
+            else:
+                self.clear_screen()
+                row_num = 1
+                print("User have posts")
+                tk.Label(self.frame, text=f'{username.capitalize()} posts:').grid(row=row_num)
+                row_num += 1
+                for post in all_posts:
+                    tk.Label(self.frame, text=post[1]).grid(row=row_num)
+                    row_num += 1
+                tk.Button(self.frame,
+                          text='Back to menu',
+                          command=self.create_admin_view).grid(row=row_num)
+
+        username_field = tk.Entry(self.frame)
+        username_field.grid(row=0, column=0)
         tk.Button(self.frame,
                   text='Show user posts',
                   command=show_user_posts).grid(row=1, column=0)
 
-    # to do
-    def create_user_view(self):
+    def create_user_view(self, username):
+
+        def add_new_post():
+            self.user_add_post_view(username)
+
         self.clear_screen()
-        tk.Button(self.frame, text='Dodaj post').grid(row=0, column=0)
-        tk.Button(self.frame, text='Zobacz wszystkie posty').grid(row=1, column=0)
-        tk.Button(self.frame, text='Wyloguj', command=self.create_login_view).grid(row=2, column=0)
+        tk.Button(self.frame, text='Add post', command=add_new_post).grid(row=0, column=0)
+        tk.Button(self.frame, text='Get all posts', command=self.user_get_all_post_view).grid(row=1, column=0)
+        tk.Button(self.frame, text='Logout', command=self.create_login_view).grid(row=2, column=0)
+
+    def user_add_post_view(self, username):
+
+        def add_new_post():
+            query = f'INSERT INTO posts VALUES("{username}","{username_field.get()}")'
+            self.perform_db_query(query)
+            messagebox.showinfo("New post info", "Post was added correctly")
+            self.create_user_view(username)
+
+        self.clear_screen()
+        tk.Label(self.frame, text='New Post').grid(row=0, column=0)
+        username_field = tk.Entry(self.frame)
+        username_field.grid(row=0, column=1)
+        tk.Button(self.frame,
+                  text='Publish new post',
+                  command=add_new_post).grid(row=1, column=1)
+        tk.Button(self.frame, text='Logout', command=self.create_login_view).grid(row=2, column=0)
+
+    def user_get_all_post_view(self):
+        self.clear_screen()
+
+        tk.Label(self.frame, text='User').grid(row=0, column=0)
+        tk.Label(self.frame, text='Post').grid(row=0, column=1)
+
+        row_num = 1
+        query = 'SELECT user, post FROM posts ORDER BY user;'
+        all_posts = self.perform_db_query_and_return_data(query)
+
+        for post in all_posts:
+            tk.Label(self.frame, text=str(post[0])).grid(row=row_num, column=0)
+            tk.Label(self.frame, text=str(post[1])).grid(row=row_num, column=1)
+            row_num += 1
+
+        tk.Button(self.frame, text='Logout', command=self.create_login_view).grid(row=row_num, column=0)
 
     def clear_screen(self):
         for widget in self.frame.winfo_children():
